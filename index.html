@@ -1,59 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>VIN Lookup</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 40px; background: #f9f9f9; }
-        h1 { color: #333; }
-        input, button { padding: 10px; font-size: 1em; margin: 5px 0; }
-        #result { margin-top: 20px; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 0 5px #ccc; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>VIN 조회</title>
 </head>
 <body>
-    <h1>🔍 VIN 차량 조회</h1>
-    <input type="text" id="vinInput" placeholder="차대번호 입력 (예: WBAKB8107CC347079)" size="40">
-    <button onclick="lookupVIN()">조회</button>
-    <div id="result"></div>
+  <h1>🔍 VIN 차량 조회</h1>
+  <input type="text" id="vinInput" placeholder="차대번호 입력 (예: WBAKB8107CC347079)">
+  <button id="lookupBtn">조회</button>
+  <div id="result"></div>
 
-    <script>
-        async function lookupVIN() {
-            const vin = document.getElementById("vinInput").value;
-            const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json`);
-            const data = await res.json();
-            const results = data.Results;
-            let html = "<h2>결과:</h2><ul>";
-            for (let item of results) {
-                if (item.Value && item.Variable) {
-                    html += `<li><strong>${item.Variable}:</strong> ${item.Value}</li>`;
-                }
+  <!-- ✅ JavaScript는 여기 삽입 -->
+  <script>
+    document.getElementById("lookupBtn").addEventListener("click", function () {
+      const vin = document.getElementById("vinInput").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "🔍 VIN 조회 중입니다...";
+
+      fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json`)
+        .then(res => res.json())
+        .then(data => {
+          let html = "<h3>🚗 차량 기본 정보</h3><ul>";
+          data.Results.forEach(item => {
+            if (item.Value && item.Variable) {
+              html += `<li><strong>${item.Variable}</strong>: ${item.Value}</li>`;
             }
-            html += "</ul>";
-            document.getElementById("result").innerHTML = html;
-        }
-    </script>
-<script>
-  document.getElementById("lookupBtn").addEventListener("click", function () {
-    const vin = document.getElementById("vinInput").value.trim();
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = "🔍 VIN 조회 중입니다...";
-
-    fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json`)
-      .then(res => res.json())
-      .then(data => {
-        let html = "<h3>🚗 차량 기본 정보</h3><ul>";
-        data.Results.forEach(item => {
-          if (item.Value && item.Variable) {
-            html += `<li><strong>${item.Variable}</strong>: ${item.Value}</li>`;
-          }
+          });
+          html += "</ul>";
+          resultDiv.innerHTML = html;
+        })
+        .catch(err => {
+          resultDiv.innerHTML = "❌ 오류가 발생했습니다. VIN 번호를 확인해주세요.";
         });
-        html += "</ul>";
-        resultDiv.innerHTML = html;
-      })
-      .catch(err => {
-        resultDiv.innerHTML = "❌ 오류가 발생했습니다. VIN 번호를 확인해주세요.";
-      });
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
