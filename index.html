@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VIN Lookup</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; background: #f9f9f9; }
+        h1 { color: #333; }
+        input, button { padding: 10px; font-size: 1em; margin: 5px 0; }
+        #result { margin-top: 20px; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 0 5px #ccc; }
+    </style>
+</head>
+<body>
+    <h1>🔍 VIN 차량 조회</h1>
+    <input type="text" id="vinInput" placeholder="차대번호 입력 (예: WBAKB8107CC347079)" size="40">
+    <button onclick="lookupVIN()">조회</button>
+    <div id="result"></div>
+
+    <script>
+        async function lookupVIN() {
+            const vin = document.getElementById("vinInput").value;
+            const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json`);
+            const data = await res.json();
+            const results = data.Results;
+            let html = "<h2>결과:</h2><ul>";
+            for (let item of results) {
+                if (item.Value && item.Variable) {
+                    html += `<li><strong>${item.Variable}:</strong> ${item.Value}</li>`;
+                }
+            }
+            html += "</ul>";
+            document.getElementById("result").innerHTML = html;
+        }
+    </script>
+</body>
+</html>
