@@ -32,5 +32,28 @@
             document.getElementById("result").innerHTML = html;
         }
     </script>
+<script>
+  document.getElementById("lookupBtn").addEventListener("click", function () {
+    const vin = document.getElementById("vinInput").value.trim();
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = "🔍 VIN 조회 중입니다...";
+
+    fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json`)
+      .then(res => res.json())
+      .then(data => {
+        let html = "<h3>🚗 차량 기본 정보</h3><ul>";
+        data.Results.forEach(item => {
+          if (item.Value && item.Variable) {
+            html += `<li><strong>${item.Variable}</strong>: ${item.Value}</li>`;
+          }
+        });
+        html += "</ul>";
+        resultDiv.innerHTML = html;
+      })
+      .catch(err => {
+        resultDiv.innerHTML = "❌ 오류가 발생했습니다. VIN 번호를 확인해주세요.";
+      });
+  });
+</script>
 </body>
 </html>
