@@ -22,36 +22,36 @@
           const rows = data.values;
           const headers = rows[0];
 
-          // 열 인덱스 정의
           const vinIndex = headers.indexOf("VIN (차대번호)");
-          const brandIndex = headers.indexOf("브랜드");
-          const modelIndex = headers.indexOf("모델명");
-          const engineIndex = headers.indexOf("엔진형식");
-          const fuelIndex = headers.indexOf("연료");
           const partsIndex = headers.indexOf("품번");
           const nameIndex = headers.indexOf("품명");
 
-          // 해당 VIN의 모든 행 찾기
-          let results = rows.filter(row => row[vinIndex] === vin);
+          // 차량 정보로 간주할 고정 항목들
+          const infoFields = [
+            "브랜드", "모델명", "세부모델", "연식", "엔진형식", "연료", "구동방식", "칼라코드"
+          ];
+          const infoIndices = {};
+          infoFields.forEach(field => {
+            infoIndices[field] = headers.indexOf(field);
+          });
 
+          const results = rows.filter(row => row[vinIndex] === vin);
           if (results.length === 0) {
             document.getElementById("result").innerHTML = "❌ 해당 차대번호 정보가 없습니다.";
             return;
           }
 
-          // 차량 기본정보 (첫 번째 행 기준)
           const firstRow = results[0];
-          let infoHtml = `
-            <h3>🚗 차량 기본 정보</h3>
-            <ul>
-              <li><strong>브랜드:</strong> ${firstRow[brandIndex]}</li>
-              <li><strong>모델명:</strong> ${firstRow[modelIndex]}</li>
-              <li><strong>엔진형식:</strong> ${firstRow[engineIndex]}</li>
-              <li><strong>연료:</strong> ${firstRow[fuelIndex]}</li>
-            </ul>
-          `;
 
-          // 부품 정보
+          let infoHtml = "<h3>🚗 차량 기본 정보</h3><ul>";
+          infoFields.forEach(field => {
+            const value = firstRow[infoIndices[field]];
+            if (value) {
+              infoHtml += `<li><strong>${field}:</strong> ${value}</li>`;
+            }
+          });
+          infoHtml += "</ul>";
+
           let partsHtml = "<h3>📦 소모품 품번 정보</h3><ul>";
           results.forEach(row => {
             if (row[partsIndex] && row[nameIndex]) {
@@ -60,7 +60,6 @@
           });
           partsHtml += "</ul>";
 
-          // 결과 출력
           document.getElementById("result").innerHTML = infoHtml + partsHtml;
         })
         .catch(err => {
