@@ -7,132 +7,126 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 30px;
-      background-color: #ffffff;
+      padding: 40px;
     }
-
-    h1 {
-      margin-bottom: 10px;
-    }
-
-    img.logo {
-      max-width: 250px;
-      margin: 0 auto 30px;
-      display: block;
-    }
-
-    #vinInput {
-      padding: 10px;
-      width: 300px;
-      font-size: 16px;
-    }
-
-    #lookupBtn {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-left: 5px;
-      cursor: pointer;
-    }
-
-    #result {
-      margin-top: 30px;
-      text-align: left;
+    .container {
       max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 0 auto;
     }
-
-    ul.parts-grid {
+    #logo {
+      width: 200px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 40px;
+      text-align: left;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      padding-left: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
     }
-
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
     li {
       margin: 5px 0;
-    }
-
-    .section-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-top: 40px;
-      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <img src="jrparts2-02.jpg" alt="JR PARTS 로고" class="logo" />
-  <h1>차대번호(VIN) 조회</h1>
-  <input type="text" id="vinInput" placeholder="VIN 입력하세요" />
-  <button id="lookupBtn">조회</button>
-
-  <div id="result"></div>
+  <div class="container">
+    <img id="logo" src="jrparts2-02.jpg" alt="JR PARTS 로고" />
+    <h1>차대번호(VIN) 조회</h1>
+    <input type="text" id="vinInput" placeholder="예: WAUZZZ4G4GN089347" />
+    <button onclick="getVinParts()">조회</button>
+    
+    <div id="result"></div>
+  </div>
 
   <script>
-    const apiKey = "AIzaSyBK0R8am8H8bjftzAlkpuM9K5_6NSAftK0";
+    const apiKey = "AIzaSyBK0R8am8H8bjftzAlkpuM9K5_6NSAftK0"; // 너의 API 키
     const sheetId = "1AZhyeYTwq9AUq5s6ZORisB_7ubWwArXPebTCjGSumaM";
     const sheetName = "JRPARTVIN";
 
-    function getVinParts(vin) {
-      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`)
-        .then(res => res.json())
-        .then(data => {
-          const rows = data.values;
-          const headers = rows[0];
-          const vinIndex = headers.indexOf("VIN (차대번호)");
-          const partIndex = headers.indexOf("품번");
-          const nameIndex = headers.indexOf("품명");
+    async function getVinParts() {
+      const vin = document.getElementById("vinInput").value.trim();
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`;
 
-          const brandIndex = headers.indexOf("브랜드");
-          const modelIndex = headers.indexOf("모델명");
-          const yearIndex = headers.indexOf("연식");
-          const engineIndex = headers.indexOf("엔진형식");
-          const fuelIndex = headers.indexOf("연료");
-          const driveIndex = headers.indexOf("구동방식");
-          const colorIndex = headers.indexOf("칼라코드");
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const rows = data.values;
 
-          let results = rows.filter(row => row[vinIndex] && row[vinIndex].trim() === vin);
-          if (results.length === 0) {
-            document.getElementById("result").innerHTML = "<p>🚫 VIN에 해당하는 데이터가 없습니다.</p>";
-            return;
+        if (!rows || rows.length < 2) {
+          document.getElementById("result").innerHTML = "❌ 데이터가 없습니다.";
+          return;
+        }
+
+        const headers = rows[0];
+        const vinIndex = headers.indexOf("VIN (차대번호)");
+        const partNumIndex = headers.indexOf("품번");
+        const partNameIndex = headers.indexOf("품명");
+
+        const carFields = ["브랜드", "모델명", "세부모델", "연식", "엔진형식", "연료", "구동방식", "칼라코드"];
+        const carIndices = carFields.map(field => headers.indexOf(field));
+
+        let results = [];
+        let currentVIN = "";
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (row[vinIndex]) currentVIN = row[vinIndex];
+
+          if (currentVIN === vin) {
+            results.push(row);
           }
+        }
 
-          const first = results[0];
-          let carInfo = `
-            <div class="section-title">🚗 차량 기본 정보</div>
-            <ul>
-              <li><strong>브랜드:</strong> ${first[brandIndex] || ""}</li>
-              <li><strong>모델명:</strong> ${first[modelIndex] || ""}</li>
-              <li><strong>연식:</strong> ${first[yearIndex] || ""}</li>
-              <li><strong>엔진형식:</strong> ${first[engineIndex] || ""}</li>
-              <li><strong>연료:</strong> ${first[fuelIndex] || ""}</li>
-              <li><strong>구동방식:</strong> ${first[driveIndex] || ""}</li>
-              <li><strong>칼라코드:</strong> ${first[colorIndex] || ""}</li>
-            </ul>
-          `;
+        if (results.length === 0) {
+          document.getElementById("result").innerHTML = "❌ 해당 VIN의 데이터가 없습니다.";
+          return;
+        }
 
-          let partsHTML = '<div class="section-title">📦 소모품 품번 정보</div><ul class="parts-grid">';
-          results.forEach(row => {
-            if (row[partIndex]) {
-              partsHTML += `<li><strong>${row[partIndex]}</strong> - ${row[nameIndex] || ""}</li>`;
-            }
-          });
-          partsHTML += '</ul>';
-
-          document.getElementById("result").innerHTML = carInfo + partsHTML;
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById("result").innerHTML = "🚫 구글시트 연동 오류";
+        // 차량 정보 추출 (첫 번째 행 기준)
+        const carInfoRow = results[0];
+        let carInfoHTML = `<div class="section"><h3>🚗 차량 기본 정보</h3><ul>`;
+        carFields.forEach((field, i) => {
+          if (carInfoRow[carIndices[i]]) {
+            carInfoHTML += `<li><strong>${field}:</strong> ${carInfoRow[carIndices[i]]}</li>`;
+          }
         });
-    }
+        carInfoHTML += `</ul></div>`;
 
-    document.getElementById("lookupBtn").addEventListener("click", function () {
-      const vin = document.getElementById("vinInput").value.trim().toUpperCase();
-      document.getElementById("result").innerHTML = "";
-      if (vin) getVinParts(vin);
-    });
+        // 품번 정보 출력
+        let partHTML = `<div class="section"><h3>📦 소모품 품번 정보</h3><div class="grid">`;
+        results.forEach(row => {
+          const num = row[partNumIndex];
+          const name = row[partNameIndex];
+          if (num && name) {
+            partHTML += `<div><strong>${num}</strong><br/>${name}</div>`;
+          }
+        });
+        partHTML += `</div></div>`;
+
+        document.getElementById("result").innerHTML = carInfoHTML + partHTML;
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("result").innerHTML = "🚫 구글시트 연동 오류";
+      }
+    }
   </script>
 </body>
 </html>
