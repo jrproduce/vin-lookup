@@ -6,52 +6,44 @@
 </head>
 <body>
   <h1>차대번호(VIN) 조회</h1>
-  <input type="text" id="vin" placeholder="VIN 입력하세요" />
-  <button onclick="lookup()">조회</button>
+  <input type="text" id="vinInput" placeholder="VIN 입력하세요" />
+  <button id="lookupBtn">조회</button>
   <div id="result"></div>
 
   <script>
-    function lookup() {
-      const vin = document.getElementById('vin').value;
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `차대번호 ${vin}에 대한 정보를 조회 중입니다...`;
-      // 추후 VIN 데이터 연결 예정
-    }
-  </script>
-<script>
-  const apiKey = "AIzaSyBK0R8am8H8bjftzAlkpuM9K5_6NSAftK0";
-  const sheetId = "1AZhyeYTwq9AUq5s6ZORisB_7ubWwArXPebTCjGSumaM";
-  const sheetName = "VIN_DB"; // 시트 이름 (첫 시트면 Sheet1, 이름 바꿨으면 그 이름)
+    const apiKey = "AIzaSyBK0R8am8H8bjftzAlkpuM9K5_6NSAftK0";
+    const sheetId = "1AZhyeYTwq9AUq5s6ZORisB_7ubWwArXPebTCjGSumaM";
+    const sheetName = "VIN_DB";
 
-  function getVinParts(vin) {
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`)
-      .then(res => res.json())
-      .then(data => {
-        const rows = data.values;
-        const headers = rows[0];
-        const vinIndex = headers.indexOf("차대번호");
-        const partsIndex = headers.indexOf("품번");
-        const nameIndex = headers.indexOf("품명(브랜드)");
+    function getVinParts(vin) {
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`)
+        .then(res => res.json())
+        .then(data => {
+          const rows = data.values;
+          const headers = rows[0];
+          const vinIndex = headers.indexOf("차대번호");
+          const partsIndex = headers.indexOf("품번");
+          const nameIndex = headers.indexOf("품명(브랜드)");
 
-        let results = rows.filter(row => row[vinIndex] === vin);
-        let html = "<h3>📦 소모품 품번 정보</h3><ul>";
+          let results = rows.filter(row => row[vinIndex] === vin);
+          let html = "<h3>📦 소모품 품번 정보</h3><ul>";
 
-        results.forEach(row => {
-          html += `<li><strong>${row[partsIndex]}</strong> - ${row[nameIndex]}</li>`;
+          results.forEach(row => {
+            html += `<li><strong>${row[partsIndex]}</strong> - ${row[nameIndex]}</li>`;
+          });
+
+          html += "</ul>";
+          document.getElementById("result").innerHTML = html;
+        })
+        .catch(err => {
+          document.getElementById("result").innerHTML = "🚫 구글시트 연동 오류";
         });
+    }
 
-        html += "</ul>";
-        document.getElementById("result").innerHTML += html;
-      })
-      .catch(err => {
-        document.getElementById("result").innerHTML += "🚫 구글시트 연동 오류";
-      });
-  }
-
-  document.getElementById("lookupBtn").addEventListener("click", function () {
-    const vin = document.getElementById("vinInput").value.trim();
-    getVinParts(vin);
-  });
-</script>
+    document.getElementById("lookupBtn").addEventListener("click", function () {
+      const vin = document.getElementById("vinInput").value.trim();
+      getVinParts(vin);
+    });
+  </script>
 </body>
 </html>
