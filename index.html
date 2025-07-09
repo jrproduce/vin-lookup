@@ -3,6 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <title>VIN Lookup</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { font-size: 24px; }
+    h3 { margin-top: 30px; }
+    input { padding: 5px; font-size: 16px; }
+    button { padding: 5px 10px; font-size: 16px; margin-left: 5px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li::before { content: "🔧 "; }
+    .section { margin-top: 20px; }
+  </style>
 </head>
 <body>
   <h1>차대번호(VIN) 조회</h1>
@@ -20,47 +30,61 @@
         .then(res => res.json())
         .then(data => {
           const rows = data.values;
-          const headers = rows[0];
-
-          const vinIndex = headers.indexOf("VIN (차대번호)");
-          const partsIndex = headers.indexOf("품번");
-          const nameIndex = headers.indexOf("품명");
-
-          // 차량 정보로 간주할 고정 항목들
-          const infoFields = [
-            "브랜드", "모델명", "세부모델", "연식", "엔진형식", "연료", "구동방식", "칼라코드"
-          ];
-          const infoIndices = {};
-          infoFields.forEach(field => {
-            infoIndices[field] = headers.indexOf(field);
-          });
-
-          const results = rows.filter(row => row[vinIndex] === vin);
-          if (results.length === 0) {
-            document.getElementById("result").innerHTML = "❌ 해당 차대번호 정보가 없습니다.";
+          if (!rows || rows.length < 2) {
+            document.getElementById("result").innerHTML = "📛 데이터가 없습니다.";
             return;
           }
 
-          const firstRow = results[0];
+          const headers = rows[0];
+          const vinIndex = headers.indexOf("VIN (차대번호)");
+          const brandIndex = headers.indexOf("브랜드");
+          const modelIndex = headers.indexOf("모델명");
+          const yearIndex = headers.indexOf("연식");
+          const engineIndex = headers.indexOf("엔진형식");
+          const fuelIndex = headers.indexOf("연료");
+          const driveIndex = headers.indexOf("구동방식");
+          const colorIndex = headers.indexOf("칼라코드");
+          const partsIndex = headers.indexOf("품번");
+          const nameIndex = headers.indexOf("품명");
 
-          let infoHtml = "<h3>🚗 차량 기본 정보</h3><ul>";
-          infoFields.forEach(field => {
-            const value = firstRow[infoIndices[field]];
-            if (value) {
-              infoHtml += `<li><strong>${field}:</strong> ${value}</li>`;
+          let matchedRows = [];
+          let currentVin = "";
+          rows.slice(1).forEach(row => {
+            if (row[vinIndex]) {
+              currentVin = row[vinIndex];
+            }
+            if (currentVin === vin) {
+              matchedRows.push(row);
             }
           });
-          infoHtml += "</ul>";
 
-          let partsHtml = "<h3>📦 소모품 품번 정보</h3><ul>";
-          results.forEach(row => {
-            if (row[partsIndex] && row[nameIndex]) {
-              partsHtml += `<li><strong>${row[partsIndex]}</strong> - ${row[nameIndex]}</li>`;
+          if (matchedRows.length === 0) {
+            document.getElementById("result").innerHTML = "❌ VIN에 해당하는 데이터가 없습니다.";
+            return;
+          }
+
+          const infoRow = matchedRows[0]; // 차량 기본 정보는 첫 번째 행 기준
+          let html = `<div class="section"><h3>🚗 차량 기본 정보</h3><ul>`;
+          if (infoRow[brandIndex]) html += `<li><strong>브랜드:</strong> ${infoRow[brandIndex]}</li>`;
+          if (infoRow[modelIndex]) html += `<li><strong>모델명:</strong> ${infoRow[modelIndex]}</li>`;
+          if (infoRow[yearIndex]) html += `<li><strong>연식:</strong> ${infoRow[yearIndex]}</li>`;
+          if (infoRow[engineIndex]) html += `<li><strong>엔진형식:</strong> ${infoRow[engineIndex]}</li>`;
+          if (infoRow[fuelIndex]) html += `<li><strong>연료:</strong> ${infoRow[fuelIndex]}</li>`;
+          if (infoRow[driveIndex]) html += `<li><strong>구동방식:</strong> ${infoRow[driveIndex]}</li>`;
+          if (infoRow[colorIndex]) html += `<li><strong>칼라코드:</strong> ${infoRow[colorIndex]}</li>`;
+          html += `</ul></div>`;
+
+          html += `<div class="section"><h3>📦 소모품 품번 정보</h3><ul>`;
+          matchedRows.forEach(row => {
+            if (row[partsIndex]) {
+              const partNum = row[partsIndex] || "";
+              const partName = row[nameIndex] || "";
+              html += `<li><strong>${partNum}</strong> - ${partName}</li>`;
             }
           });
-          partsHtml += "</ul>";
+          html += "</ul></div>";
 
-          document.getElementById("result").innerHTML = infoHtml + partsHtml;
+          document.getElementById("result").innerHTML = html;
         })
         .catch(err => {
           document.getElementById("result").innerHTML = "🚫 구글시트 연동 오류";
@@ -69,6 +93,10 @@
 
     document.getElementById("lookupBtn").addEventListener("click", function () {
       const vin = document.getElementById("vinInput").value.trim();
+      if (vin === "") {
+        document.getElementById("result").innerHTML = "❗ VIN을 입력하세요.";
+        return;
+      }
       getVinParts(vin);
     });
   </script>
